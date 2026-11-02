@@ -1,0 +1,475 @@
+/* ==========================================================================
+   NECROLOG - DIGITAL GRAVEYARD MONITORING DASHBOARD
+   Design System & Keyframe Animation Physics
+   ========================================================================== */
+
+:root {
+  /* Color Tokens */
+  --obsidian-black: #08080c;
+  --midnight-ash: #121216;
+  --midnight-elevated: #1a1a22;
+  --midnight-border: #272736;
+  
+  --neon-green: #00ff66;
+  --neon-green-dim: rgba(0, 255, 102, 0.15);
+  --neon-green-glow: 0 0 15px rgba(0, 255, 102, 0.45);
+  
+  --phantasmal-purple: #a855f7;
+  --phantasmal-purple-dim: rgba(168, 85, 247, 0.15);
+  --phantasmal-purple-glow: 0 0 20px rgba(168, 85, 247, 0.4);
+  
+  --toxic-red: #ff3333;
+  --toxic-red-dim: rgba(255, 51, 51, 0.18);
+  --toxic-red-glow: 0 0 25px rgba(255, 51, 51, 0.6);
+
+  --bone-white: #f1f5f9;
+  --bone-muted: #94a3b8;
+  --crypt-slate: #475569;
+  --deep-shadow: rgba(0, 0, 0, 0.85);
+
+  /* Fonts */
+  --font-serif: 'Cinzel', serif, Georgia;
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace, Consolas, Courier New;
+}
+
+/* Base Document Styling */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  background-color: var(--obsidian-black);
+  color: var(--bone-white);
+  font-family: var(--font-sans);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  overflow-x: hidden;
+  background: radial-gradient(circle at 50% 0%, #151025 0%, #08080c 60%, #050508 100%);
+  background-attachment: fixed;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--obsidian-black);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--midnight-border);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--phantasmal-purple);
+}
+
+/* Atmospheric Background Fog Grid */
+.graveyard-sky {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.4;
+  background-image: 
+    radial-gradient(circle at 15% 20%, rgba(168, 85, 247, 0.08) 0%, transparent 40%),
+    radial-gradient(circle at 85% 30%, rgba(255, 51, 51, 0.06) 0%, transparent 40%),
+    radial-gradient(circle at 50% 80%, rgba(0, 255, 102, 0.04) 0%, transparent 50%);
+}
+
+.graveyard-soil-texture {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+/* ==========================================================================
+   HEADSTONE CARD VISUALS & METAPHOR
+   ========================================================================== */
+
+.headstone-card {
+  position: relative;
+  background: linear-gradient(180deg, #181822 0%, #111117 100%);
+  border: 1px solid var(--midnight-border);
+  border-radius: 1.25rem 1.25rem 0.5rem 0.5rem;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), 
+              border-color 0.25s ease, 
+              box-shadow 0.25s ease;
+  cursor: pointer;
+  outline: none;
+  overflow: visible;
+}
+
+.headstone-card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(168, 85, 247, 0.5);
+}
+
+.headstone-card:focus-visible {
+  border-color: var(--neon-green);
+  box-shadow: 0 0 0 2px var(--neon-green-glow);
+}
+
+/* Tombstone Pedestal & Soil Footing */
+.tombstone-pedestal {
+  position: relative;
+  height: 10px;
+  background: #0d0d12;
+  border-top: 1px solid #232330;
+  border-radius: 0 0 0.5rem 0.5rem;
+}
+
+/* CRITICAL SEVERITY: Deep Red Drop-Shadow & Pulsing Soul Aura */
+.headstone-card.severity-critical {
+  border-color: rgba(255, 51, 51, 0.4);
+  box-shadow: 0 0 25px rgba(255, 51, 51, 0.35), 0 10px 30px rgba(0, 0, 0, 0.7);
+  animation: pulseCriticalAura 3.5s infinite ease-in-out;
+}
+
+.headstone-card.severity-critical:hover {
+  border-color: var(--toxic-red);
+  box-shadow: 0 0 35px rgba(255, 51, 51, 0.6), 0 15px 35px rgba(0, 0, 0, 0.85);
+}
+
+/* WARNING SEVERITY: Phantasmal Purple Glow */
+.headstone-card.severity-warning {
+  border-color: rgba(168, 85, 247, 0.3);
+  box-shadow: 0 0 18px rgba(168, 85, 247, 0.2), 0 10px 25px rgba(0, 0, 0, 0.6);
+}
+
+.headstone-card.severity-warning:hover {
+  border-color: var(--phantasmal-purple);
+  box-shadow: 0 0 28px rgba(168, 85, 247, 0.45), 0 12px 30px rgba(0, 0, 0, 0.8);
+}
+
+/* INFO SEVERITY: Subdued Ghostly Slate */
+.headstone-card.severity-info {
+  border-color: rgba(100, 116, 139, 0.25);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.headstone-card.severity-info:hover {
+  border-color: rgba(148, 163, 184, 0.4);
+  box-shadow: 0 0 20px rgba(148, 163, 184, 0.25), 0 10px 25px rgba(0, 0, 0, 0.7);
+}
+
+/* ==========================================================================
+   AMBIENT DRIFTING MIST & SMOKE PARTICLES (Beneath Critical Cards)
+   ========================================================================== */
+
+.critical-mist-container {
+  position: absolute;
+  top: 60%;
+  left: -20%;
+  right: -20%;
+  bottom: -40px;
+  pointer-events: none;
+  overflow: visible;
+  z-index: -1;
+}
+
+.mist-layer {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  filter: blur(14px);
+  opacity: 0.55;
+  mix-blend-mode: screen;
+}
+
+.mist-layer-1 {
+  background: radial-gradient(ellipse at 50% 60%, rgba(255, 51, 51, 0.35) 0%, rgba(168, 85, 247, 0.15) 50%, transparent 80%);
+  animation: driftingMist 9s infinite alternate ease-in-out;
+}
+
+.mist-layer-2 {
+  background: radial-gradient(ellipse at 40% 70%, rgba(255, 51, 51, 0.25) 0%, rgba(80, 20, 20, 0.1) 60%, transparent 85%);
+  animation: driftingMistAlt 13s infinite alternate ease-in-out;
+}
+
+.mist-layer-3 {
+  background: radial-gradient(ellipse at 60% 80%, rgba(168, 85, 247, 0.2) 0%, transparent 70%);
+  animation: driftingMist 16s infinite alternate-reverse ease-in-out;
+}
+
+@keyframes driftingMist {
+  0% {
+    transform: translateX(-15px) scale(0.9) translateY(0);
+    opacity: 0.35;
+  }
+  50% {
+    transform: translateX(12px) scale(1.15) translateY(-6px);
+    opacity: 0.65;
+  }
+  100% {
+    transform: translateX(20px) scale(1.05) translateY(-3px);
+    opacity: 0.45;
+  }
+}
+
+@keyframes driftingMistAlt {
+  0% {
+    transform: translateX(18px) scale(1.1) translateY(-2px);
+    opacity: 0.3;
+  }
+  50% {
+    transform: translateX(-10px) scale(0.95) translateY(4px);
+    opacity: 0.6;
+  }
+  100% {
+    transform: translateX(-22px) scale(1.2) translateY(-4px);
+    opacity: 0.35;
+  }
+}
+
+@keyframes pulseCriticalAura {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(255, 51, 51, 0.3), 0 10px 30px rgba(0, 0, 0, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 38px rgba(255, 51, 51, 0.65), 0 12px 35px rgba(0, 0, 0, 0.9);
+  }
+}
+
+/* ==========================================================================
+   PHANTOM SUMMONS: GLASSMORPHIC INSPECTOR MODAL
+   ========================================================================== */
+
+.phantom-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background-color: rgba(8, 8, 12, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.phantom-modal-backdrop::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 30%, rgba(168, 85, 247, 0.05) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.phantom-modal-container {
+  position: relative;
+  width: 100%;
+  max-width: 900px;
+  max-height: 90vh;
+  background: linear-gradient(180deg, #161620 0%, #101016 100%);
+  border: 1px solid rgba(168, 85, 247, 0.35);
+  border-radius: 1rem;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9), 0 0 40px rgba(168, 85, 247, 0.15);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: modalSummon 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalSummon {
+  from {
+    opacity: 0;
+    transform: scale(0.94) translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Glowing Monospace Séance Terminal */
+.seance-terminal {
+  background-color: #06060a;
+  border: 1px solid #1f1f2e;
+  border-radius: 0.5rem;
+  font-family: var(--font-mono);
+  color: var(--neon-green);
+  text-shadow: 0 0 6px rgba(0, 255, 102, 0.5);
+  position: relative;
+  overflow: hidden;
+}
+
+.seance-terminal::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.18),
+    rgba(0, 0, 0, 0.18) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  opacity: 0.75;
+  z-index: 1;
+}
+
+.terminal-cursor {
+  display: inline-block;
+  width: 8px;
+  height: 15px;
+  background-color: var(--neon-green);
+  box-shadow: 0 0 8px var(--neon-green);
+  vertical-align: middle;
+  margin-left: 2px;
+  animation: blinkCursor 0.8s infinite;
+}
+
+@keyframes blinkCursor {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+/* ==========================================================================
+   EXORCISM & CRUMBLE PARTICLE ENGINE
+   ========================================================================== */
+
+.headstone-crumbling {
+  animation: seismicPurge 0.85s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards;
+  pointer-events: none;
+}
+
+@keyframes seismicPurge {
+  0% {
+    transform: translate(0, 0) rotate(0deg) scale(1);
+    filter: brightness(1) drop-shadow(0 0 0px var(--toxic-red));
+  }
+  15% {
+    transform: translate(-3px, 2px) rotate(-1.5deg) scale(1.02);
+    filter: brightness(1.6) drop-shadow(0 0 20px var(--toxic-red));
+  }
+  30% {
+    transform: translate(4px, -2px) rotate(2deg) scale(1.03);
+    filter: brightness(2) drop-shadow(0 0 35px var(--neon-green));
+  }
+  45% {
+    transform: translate(-5px, -3px) rotate(-2.5deg) scale(1.02);
+    filter: brightness(2.5) drop-shadow(0 0 45px #ffffff);
+  }
+  60% {
+    transform: translate(3px, 3px) rotate(1.5deg) scale(0.95);
+    opacity: 0.9;
+  }
+  75% {
+    transform: translate(-2px, -1px) rotate(-1deg) scale(0.85);
+    opacity: 0.6;
+    filter: blur(2px) grayscale(0.8);
+  }
+  90% {
+    transform: translate(0, 10px) rotate(0) scale(0.4);
+    opacity: 0.2;
+    filter: blur(6px) grayscale(1);
+  }
+  100% {
+    transform: translate(0, 20px) scale(0);
+    opacity: 0;
+    filter: blur(10px);
+  }
+}
+
+/* Dynamic Ash / Soul Particles */
+.ash-particle {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+  border-radius: 50%;
+  animation: disperseParticle var(--duration, 1.2s) ease-out forwards;
+}
+
+@keyframes disperseParticle {
+  0% {
+    transform: translate(0, 0) scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(var(--tx, 30px), var(--ty, -100px)) scale(0) rotate(var(--rot, 90deg));
+    opacity: 0;
+  }
+}
+
+/* Fresh Spawn Pop In */
+.tombstone-spawn-in {
+  animation: tombstoneEmerge 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes tombstoneEmerge {
+  0% {
+    opacity: 0;
+    transform: translateY(30px) scale(0.85);
+  }
+  70% {
+    transform: translateY(-5px) scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Sanity Bar Glow */
+.sanity-bar-fill {
+  transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.4s ease;
+}
+
+/* Toast Notifications */
+.necro-toast {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1.25rem;
+  background: rgba(18, 18, 24, 0.95);
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(168, 85, 247, 0.25);
+  backdrop-filter: blur(10px);
+  animation: toastSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  max-width: 90vw;
+}
+
+@keyframes toastSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Accessibility: Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .headstone-card,
+  .headstone-card.severity-critical,
+  .mist-layer,
+  .ash-particle,
+  .seismicPurge,
+  .tombstone-spawn-in {
+    animation: none !important;
+    transition: none !important;
+  }
+}

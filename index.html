@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NecroLog — Digital Graveyard Debugging Dashboard</title>
+  <meta name="description" content="Production exception and crash telemetry dashboard powered by a Gothic Digital Graveyard metaphor. Kiroween Hackathon Costume Contest Entry.">
+  
+  <!-- Google Fonts for Gothic Aesthetic & High Contrast Readability -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            obsidian: '#08080C',
+            midnight: '#121216',
+            'midnight-card': '#161620',
+            'midnight-border': '#272736',
+            'neon-green': '#00FF66',
+            'phantasmal-purple': '#A855F7',
+            'toxic-red': '#FF3333',
+            'bone-white': '#F1F5F9',
+            'bone-muted': '#94A3B8',
+            'crypt-slate': '#475569'
+          },
+          fontFamily: {
+            serif: ['Cinzel', 'serif'],
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- Custom Design System Styles -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-obsidian text-bone-white min-h-screen flex flex-col font-sans selection:bg-phantasmal-purple selection:text-white">
+
+  <!-- Ambient Graveyard Sky & Ground Texture Layers -->
+  <div class="graveyard-sky" aria-hidden="true"></div>
+  <div class="graveyard-soil-texture" aria-hidden="true"></div>
+
+  <!-- Accessible Skip Link -->
+  <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-neon-green focus:text-black focus:font-bold focus:rounded-md">
+    Skip to main content
+  </a>
+
+  <!-- ==========================================================================
+       TOP TELEMETRY NAV & SANITY BAR
+       ========================================================================== -->
+  <header class="relative z-20 border-b border-midnight-border bg-midnight/90 backdrop-blur-md sticky top-0 transition-all">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <!-- Upper Header Bar -->
+      <div class="flex flex-col md:flex-row md:items-center justify-between py-3.5 gap-4">
+        
+        <!-- Brand / Identity -->
+        <div class="flex items-center gap-3.5">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-toxic-red/30 via-phantasmal-purple/30 to-midnight-card border border-phantasmal-purple/40 flex items-center justify-center shadow-lg shadow-phantasmal-purple/10">
+            <!-- Gothic Tombstone SVG Logo -->
+            <svg class="w-6 h-6 text-neon-green" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2a8 8 0 0 0-8 8v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a8 8 0 0 0-8-8z"/>
+              <path d="M12 7v6"/>
+              <path d="M9 10h6"/>
+              <path d="M7 22v-2"/>
+              <path d="M17 22v-2"/>
+            </svg>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h1 class="font-serif text-xl sm:text-2xl font-bold tracking-wider text-bone-white bg-clip-text text-transparent bg-gradient-to-r from-bone-white via-slate-200 to-bone-muted">
+                NECROLOG
+              </h1>
+              <span class="text-[10px] font-mono tracking-widest uppercase px-2 py-0.5 rounded-full bg-toxic-red/10 border border-toxic-red/30 text-toxic-red font-semibold animate-pulse">
+                LIVE SPECTRE MONITOR
+              </span>
+            </div>
+            <p class="text-xs text-bone-muted hidden sm:block">Digital Graveyard APM & Crash Telemetry • Kiroween Edition</p>
+          </div>
+        </div>
+
+        <!-- Telemetry Controls & Audio Engine Switch -->
+        <div class="flex items-center flex-wrap gap-2.5">
+          
+          <!-- Summon Manual Incident Button -->
+          <button id="btn-manual-summon" class="px-3.5 py-1.5 rounded-lg bg-midnight-card hover:bg-midnight-elevated border border-toxic-red/40 hover:border-toxic-red text-toxic-red hover:text-white text-xs font-mono font-medium flex items-center gap-2 transition-all shadow-sm active:scale-95" title="Force spawn an unhandled incident [Shortcut: S]">
+            <svg class="w-4 h-4 text-toxic-red" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+            </svg>
+            <span>Summon Bug</span>
+          </button>
+
+          <!-- Autonomous Stream Toggle & Countdown Badge -->
+          <div class="flex items-center rounded-lg bg-midnight-card border border-midnight-border p-0.5">
+            <button id="btn-stream-toggle" class="px-3 py-1.5 rounded-md text-xs font-mono flex items-center gap-2 text-neon-green hover:bg-white/5 transition-colors" title="Toggle autonomous 15s crash streamer">
+              <span id="stream-indicator-dot" class="w-2 h-2 rounded-full bg-neon-green animate-ping"></span>
+              <span id="stream-status-label" class="font-semibold">Stream: Active</span>
+            </button>
+            <span id="stream-countdown-badge" class="px-2 py-1 text-[11px] font-mono text-bone-muted border-l border-midnight-border bg-black/30 rounded-r-md" title="Countdown to next autonomous crash">
+              15s
+            </span>
+          </div>
+
+          <!-- Sound FX Toggle Button -->
+          <button id="btn-sound-toggle" class="p-2 rounded-lg bg-midnight-card hover:bg-midnight-elevated border border-midnight-border hover:border-phantasmal-purple text-bone-muted hover:text-bone-white transition-all" title="Toggle Spooky Web Audio SFX [Shortcut: M]" aria-label="Toggle Web Audio SFX">
+            <svg id="icon-sound-on" class="w-4 h-4 text-neon-green" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+            </svg>
+            <svg id="icon-sound-off" class="w-4 h-4 text-bone-muted hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+              <line x1="23" y1="9" x2="17" y2="15"/>
+              <line x1="17" y1="9" x2="23" y2="15"/>
+            </svg>
+          </button>
+
+          <!-- View Switcher (Graveyard vs Banished Crypt) -->
+          <div class="flex rounded-lg bg-black/40 border border-midnight-border p-1">
+            <button id="tab-cemetery" class="px-3 py-1 rounded-md text-xs font-mono font-medium bg-phantasmal-purple text-white shadow-sm transition-all flex items-center gap-1.5" aria-selected="true">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2a8 8 0 0 0-8 8v12h16V10a8 8 0 0 0-8-8z"/>
+              </svg>
+              <span>Graveyard</span>
+              <span id="badge-active-count" class="px-1.5 py-0.2 rounded-full bg-black/40 text-[10px] text-neon-green ml-1 font-bold">0</span>
+            </button>
+            <button id="tab-crypt" class="px-3 py-1 rounded-md text-xs font-mono font-medium text-bone-muted hover:text-bone-white transition-all flex items-center gap-1.5" aria-selected="false">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 21h18M5 21V7l7-4 7 4v14M9 10h6v6H9z"/>
+              </svg>
+              <span>The Crypt</span>
+              <span id="badge-crypt-count" class="px-1.5 py-0.2 rounded-full bg-black/40 text-[10px] text-phantasmal-purple ml-1 font-bold">0</span>
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- System Sanity Meter & Triage Bar -->
+      <div class="py-2.5 border-t border-midnight-border/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+        <div class="flex items-center gap-3 w-full sm:w-auto">
+          <span class="font-mono text-bone-muted flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-neon-green" id="sanity-status-light"></span>
+            <span>SYSTEM SANITY:</span>
+            <strong id="sanity-percent-text" class="text-neon-green font-bold text-sm">100%</strong>
+          </span>
+          <div class="flex-1 sm:w-48 bg-midnight-border rounded-full h-2 overflow-hidden shadow-inner">
+            <div id="sanity-bar" class="sanity-bar-fill h-full bg-neon-green rounded-full" style="width: 100%;"></div>
+          </div>
+          <span id="sanity-verdict" class="text-[11px] font-mono text-bone-muted hidden md:inline">Grounds are serene</span>
+        </div>
+
+        <!-- Telemetry Counters Summary -->
+        <div class="flex items-center gap-4 font-mono text-[11px]">
+          <div class="flex items-center gap-1.5 text-toxic-red" title="Critical Unhandled Outages">
+            <span class="w-2 h-2 rounded-full bg-toxic-red animate-pulse"></span>
+            <span>Critical:</span>
+            <strong id="counter-critical" class="font-bold">0</strong>
+          </div>
+          <div class="flex items-center gap-1.5 text-phantasmal-purple" title="Warning Degraded Services">
+            <span class="w-2 h-2 rounded-full bg-phantasmal-purple"></span>
+            <span>Warning:</span>
+            <strong id="counter-warning" class="font-bold">0</strong>
+          </div>
+          <div class="flex items-center gap-1.5 text-bone-muted" title="Info Diagnostic Logs">
+            <span class="w-2 h-2 rounded-full bg-crypt-slate"></span>
+            <span>Info:</span>
+            <strong id="counter-info" class="font-bold">0</strong>
+          </div>
+          <div class="flex items-center gap-1.5 text-neon-green" title="Bugs Exorcised / Resolved">
+            <svg class="w-3.5 h-3.5 text-neon-green" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+            </svg>
+            <span>Exorcised:</span>
+            <strong id="counter-exorcised" class="font-bold">0</strong>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ==========================================================================
+       MAIN CONTENT CONTAINER
+       ========================================================================== -->
+  <main id="main-content" class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 relative z-10">
+
+    <!-- Filters, Search & Sorting Ribbon -->
+    <section aria-label="Incident Filters" class="mb-8 bg-midnight/70 backdrop-blur-sm border border-midnight-border rounded-xl p-3 sm:p-4 shadow-lg">
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        
+        <!-- Live Search Input -->
+        <div class="relative flex-1">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-bone-muted">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+          </div>
+          <input 
+            type="text" 
+            id="filter-search" 
+            placeholder="Search spectres by error message, service, thread ID, or stack..." 
+            class="w-full pl-9 pr-4 py-2 bg-obsidian/80 border border-midnight-border focus:border-phantasmal-purple rounded-lg text-sm text-bone-white placeholder-bone-muted/60 focus:outline-none transition-all font-mono"
+            aria-label="Search incidents"
+          >
+          <button id="btn-clear-search" class="absolute inset-y-0 right-0 pr-3 flex items-center text-bone-muted hover:text-bone-white hidden" title="Clear Search">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Filter Chips & Microservice Selector -->
+        <div class="flex flex-wrap items-center gap-2.5">
+          
+          <!-- Severity Filter Tabs -->
+          <div class="flex rounded-lg bg-obsidian border border-midnight-border p-1" role="tablist" aria-label="Severity Filter">
+            <button class="filter-sev-btn active px-2.5 py-1 text-xs font-mono rounded bg-midnight-border text-bone-white font-medium transition-all" data-severity="ALL">All</button>
+            <button class="filter-sev-btn px-2.5 py-1 text-xs font-mono rounded text-toxic-red hover:bg-toxic-red/10 transition-all" data-severity="CRITICAL">Critical</button>
+            <button class="filter-sev-btn px-2.5 py-1 text-xs font-mono rounded text-phantasmal-purple hover:bg-phantasmal-purple/10 transition-all" data-severity="WARNING">Warning</button>
+            <button class="filter-sev-btn px-2.5 py-1 text-xs font-mono rounded text-bone-muted hover:bg-white/5 transition-all" data-severity="INFO">Info</button>
+          </div>
+
+          <!-- Microservice Selector -->
+          <select id="filter-service" class="bg-obsidian border border-midnight-border text-bone-white text-xs font-mono rounded-lg px-3 py-2 focus:border-phantasmal-purple focus:outline-none" aria-label="Filter by microservice">
+            <option value="ALL">All Microservices</option>
+            <option value="auth-vault-v2">auth-vault-v2</option>
+            <option value="payment-daemon">payment-daemon</option>
+            <option value="inventory-db">inventory-db</option>
+            <option value="order-orchestrator">order-orchestrator</option>
+            <option value="edge-router">edge-router</option>
+          </select>
+
+          <!-- Sort Order Selector -->
+          <select id="sort-order" class="bg-obsidian border border-midnight-border text-bone-white text-xs font-mono rounded-lg px-3 py-2 focus:border-phantasmal-purple focus:outline-none" aria-label="Sort order">
+            <option value="NEWEST">Newest Outage First</option>
+            <option value="SEVERITY">Severity: Critical First</option>
+            <option value="SERVICE">Service Name (A-Z)</option>
+          </select>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==========================================================================
+         VIEW 1: THE APP GRAVEYARD (Cemetery Grid)
+         ========================================================================== -->
+    <section id="section-graveyard" aria-label="The App Graveyard View" class="transition-opacity duration-300">
+      
+      <!-- Section Header -->
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2">
+          <svg class="w-5 h-5 text-toxic-red" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <h2 class="font-serif text-lg font-bold tracking-wide text-bone-white">
+            Active Cemetery Grounds
+          </h2>
+          <span id="active-incidents-subtext" class="text-xs font-mono text-bone-muted">(Click any headstone to summon its spirit stack trace)</span>
+        </div>
+        <div class="text-xs font-mono text-bone-muted hidden sm:block">
+          Glow & Mist intensity indicates triage urgency
+        </div>
+      </div>
+
+      <!-- The Tombstone Grid (Responsive Grid) -->
+      <div id="cemetery-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pt-2 pb-12" role="region" aria-live="polite">
+        <!-- Rendered dynamically by script.js -->
+      </div>
+
+      <!-- Empty State (When all bugs are exorcised or filtered) -->
+      <div id="cemetery-empty-state" class="hidden text-center py-16 px-4 bg-midnight/40 border border-dashed border-midnight-border rounded-2xl max-w-lg mx-auto">
+        <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-neon-green/10 border border-neon-green/30 flex items-center justify-center">
+          <svg class="w-8 h-8 text-neon-green" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
+        </div>
+        <h3 class="font-serif text-xl font-bold text-bone-white mb-2">Hallowed Peace Reclaimed</h3>
+        <p class="text-sm text-bone-muted mb-6">No unhandled spectres currently haunt the system under the selected filter criteria. All nodes rest in peace.</p>
+        <button id="btn-empty-summon" class="px-4 py-2 rounded-lg bg-toxic-red/20 border border-toxic-red hover:bg-toxic-red/30 text-toxic-red text-xs font-mono font-bold transition-all">
+          Summon an Incident
+        </button>
+      </div>
+
+    </section>
+
+    <!-- ==========================================================================
+         VIEW 2: THE CRYPT (Mausoleum of Exorcised Bugs)
+         ========================================================================== -->
+    <section id="section-crypt" aria-label="The Crypt View" class="hidden transition-opacity duration-300">
+      
+      <!-- Section Header -->
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2">
+          <svg class="w-5 h-5 text-phantasmal-purple" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 21h18M5 21V7l7-4 7 4v14M9 10h6v6H9z"/>
+          </svg>
+          <h2 class="font-serif text-lg font-bold tracking-wide text-bone-white">
+            The Crypt — Mausoleum of Banished Bugs
+          </h2>
+          <span class="text-xs font-mono text-bone-muted">(Resolved and hot-fixed incident audit log)</span>
+        </div>
+        <button id="btn-return-cemetery" class="text-xs font-mono text-neon-green hover:underline flex items-center gap-1">
+          ← Return to Active Cemetery
+        </button>
+      </div>
+
+      <!-- Crypt Grid -->
+      <div id="crypt-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pt-2 pb-12">
+        <!-- Rendered dynamically by script.js -->
+      </div>
+
+      <!-- Empty Crypt State -->
+      <div id="crypt-empty-state" class="hidden text-center py-16 px-4 bg-midnight/40 border border-dashed border-midnight-border rounded-2xl max-w-lg mx-auto">
+        <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-phantasmal-purple/10 border border-phantasmal-purple/30 flex items-center justify-center">
+          <svg class="w-8 h-8 text-phantasmal-purple" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="8" y1="12" x2="16" y2="12"/>
+          </svg>
+        </div>
+        <h3 class="font-serif text-xl font-bold text-bone-white mb-2">The Crypt is Empty</h3>
+        <p class="text-sm text-bone-muted mb-6">No bugs have been exorcised yet. Click any active tombstone in the Graveyard and choose "Exorcise Bug" to banish it here.</p>
+        <button id="btn-empty-return-cemetery" class="px-4 py-2 rounded-lg bg-phantasmal-purple/20 border border-phantasmal-purple text-phantasmal-purple text-xs font-mono font-bold transition-all">
+          Inspect Graveyard
+        </button>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ==========================================================================
+       PHANTOM SUMMONS: GLASSMORPHIC DETAIL INSPECTOR MODAL
+       ========================================================================== -->
+  <div id="phantom-modal" class="phantom-modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="modal-incident-title" aria-describedby="modal-incident-msg">
+    <div class="phantom-modal-container">
+      
+      <!-- Modal Header Bar -->
+      <div class="p-4 sm:p-6 border-b border-midnight-border flex items-start justify-between gap-4 bg-midnight/80">
+        
+        <div class="flex items-start gap-3">
+          <div id="modal-tombstone-icon" class="w-12 h-12 rounded-xl bg-obsidian border border-midnight-border flex items-center justify-center shrink-0">
+            <!-- Dynamic Vector SVG Injected Here -->
+          </div>
+          <div>
+            <div class="flex items-center flex-wrap gap-2 mb-1.5">
+              <span id="modal-incident-id" class="px-2 py-0.5 rounded bg-black/60 border border-midnight-border font-mono text-xs font-bold text-bone-white">
+                NECRO-0000
+              </span>
+              <span id="modal-severity-badge" class="px-2 py-0.5 rounded font-mono text-xs font-bold uppercase">
+                CRITICAL
+              </span>
+              <span id="modal-service-badge" class="px-2 py-0.5 rounded bg-midnight-border font-mono text-xs text-bone-muted">
+                auth-vault-v2
+              </span>
+              <span id="modal-thread-badge" class="px-2 py-0.5 rounded bg-obsidian border border-midnight-border font-mono text-[11px] text-crypt-slate hidden sm:inline">
+                thread: thr-0x12a
+              </span>
+            </div>
+            <h3 id="modal-incident-title" class="font-serif text-lg sm:text-xl font-bold text-bone-white leading-tight">
+              DeadlockDetectedException: Lock wait timeout exceeded
+            </h3>
+            <p id="modal-incident-timestamp" class="text-xs font-mono text-bone-muted mt-1">
+              Died at: 2026-11-02 23:45:10 UTC (2m ago)
+            </p>
+          </div>
+        </div>
+
+        <!-- Close Modal Button -->
+        <button id="btn-close-modal" class="p-2 rounded-lg bg-obsidian/60 hover:bg-midnight-border text-bone-muted hover:text-bone-white transition-all focus:outline-none focus:ring-2 focus:ring-phantasmal-purple" aria-label="Close Inspector [Esc]">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+
+      </div>
+
+      <!-- Modal Body (Terminal Stack Trace & Forensics) -->
+      <div class="p-4 sm:p-6 overflow-y-auto space-y-4 flex-1">
+        
+        <!-- Error Description / Necropsy Finding -->
+        <div class="bg-obsidian/70 border border-midnight-border/80 rounded-lg p-3.5">
+          <div class="flex items-center justify-between text-xs font-mono text-bone-muted mb-1">
+            <span class="flex items-center gap-1.5 text-toxic-red font-semibold">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              NECROPSY FORENSIC REPORT:
+            </span>
+            <span id="modal-memory-snapshot" class="text-[11px] text-crypt-slate">Heap DUMP: 0xDEADBEEF</span>
+          </div>
+          <p id="modal-incident-msg" class="text-sm text-bone-white font-mono leading-relaxed">
+            Transaction could not acquire table exclusive lock within 30000ms. Process aborted violently.
+          </p>
+        </div>
+
+        <!-- The Monospace Séance Terminal -->
+        <div>
+          <div class="flex items-center justify-between py-1.5 px-2 bg-midnight-border/40 rounded-t-lg border-t border-x border-midnight-border text-xs font-mono">
+            <div class="flex items-center gap-2 text-neon-green">
+              <span class="w-2.5 h-2.5 rounded-full bg-toxic-red inline-block"></span>
+              <span class="w-2.5 h-2.5 rounded-full bg-phantasmal-purple inline-block"></span>
+              <span class="w-2.5 h-2.5 rounded-full bg-neon-green inline-block"></span>
+              <span class="text-[11px] font-bold text-bone-muted ml-2">SÉANCE SHELL — FORENSIC STACK TRACE STREAM</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <button id="btn-skip-typewriter" class="px-2 py-0.5 rounded bg-black/50 hover:bg-black text-[11px] text-bone-muted hover:text-bone-white border border-midnight-border transition-all">
+                Skip Transmission
+              </button>
+              <button id="btn-copy-stack" class="px-2 py-0.5 rounded bg-neon-green/10 hover:bg-neon-green/20 text-[11px] text-neon-green border border-neon-green/30 flex items-center gap-1 transition-all" title="Copy full trace to clipboard">
+                <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                </svg>
+                <span id="copy-btn-text">Copy Trace</span>
+              </button>
+            </div>
+          </div>
+          
+          <div class="seance-terminal p-4 max-h-64 sm:max-h-72 overflow-y-auto rounded-b-lg border-b border-x border-midnight-border text-xs leading-relaxed font-mono">
+            <pre id="terminal-stream" class="whitespace-pre-wrap font-mono"></pre><span class="terminal-cursor"></span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer (Actions) -->
+      <div class="p-4 sm:p-6 border-t border-midnight-border bg-midnight/90 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div class="text-xs font-mono text-bone-muted order-2 sm:order-1 text-center sm:text-left">
+          Hot-fixing closes this incident and moves the tombstone to the Mausoleum.
+        </div>
+        <div class="flex items-center gap-3 w-full sm:w-auto order-1 sm:order-2 justify-end">
+          <button id="btn-modal-cancel" class="px-4 py-2 rounded-lg bg-obsidian hover:bg-midnight-card border border-midnight-border text-xs font-mono text-bone-muted hover:text-bone-white transition-all w-full sm:w-auto">
+            Cancel
+          </button>
+          
+          <!-- EXORCISE BUG ACTION BUTTON -->
+          <button id="btn-exorcise" class="px-5 py-2.5 rounded-lg bg-gradient-to-r from-toxic-red via-phantasmal-purple to-neon-green hover:brightness-110 text-black font-sans font-extrabold text-sm tracking-wide shadow-lg shadow-toxic-red/30 flex items-center justify-center gap-2 transition-all transform active:scale-95 w-full sm:w-auto">
+            <!-- Ghost / Flame Purge SVG -->
+            <svg class="w-4 h-4 text-black" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
+            </svg>
+            <span>Exorcise Bug</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       DYNAMIC PARTICLE DISPERSAL LAYER & TOAST CONTAINER
+       ========================================================================== -->
+  <div id="particle-container" class="pointer-events-none fixed inset-0 z-[999]" aria-hidden="true"></div>
+  <div id="toast-container" class="pointer-events-none fixed bottom-4 right-4 z-[300]" aria-live="polite"></div>
+
+  <!-- ==========================================================================
+       FOOTER & KEYBOARD SHORTCUTS
+       ========================================================================== -->
+  <footer class="mt-auto border-t border-midnight-border/60 bg-obsidian py-4 text-xs font-mono text-crypt-slate relative z-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-3">
+      <div class="flex items-center gap-2">
+        <span class="w-1.5 h-1.5 rounded-full bg-neon-green"></span>
+        <span>NecroLog v2.0 • Kiroween Hackathon Costume Contest Track</span>
+      </div>
+      <div class="flex items-center flex-wrap gap-4 text-[11px]">
+        <span><kbd class="px-1.5 py-0.5 rounded bg-midnight-border text-bone-muted border border-crypt-slate/40">S</kbd> Summon Incident</span>
+        <span><kbd class="px-1.5 py-0.5 rounded bg-midnight-border text-bone-muted border border-crypt-slate/40">M</kbd> Toggle Audio</span>
+        <span><kbd class="px-1.5 py-0.5 rounded bg-midnight-border text-bone-muted border border-crypt-slate/40">Esc</kbd> Close Inspector</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Main Application Script -->
+  <script src="script.js"></script>
+</body>
+</html>
